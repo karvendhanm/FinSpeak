@@ -1,0 +1,44 @@
+# Environment variables (NEVER commit credentials!)
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/.venv/
+backend/venv/
+backend/env/
+*.egg-info/
+.pytest_cache/
+
+# Node.js / React
+finspeak-frontend/node_modules/
+finspeak-frontend/dist/
+finspeak-frontend/build/
+finspeak-frontend/.vite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.log

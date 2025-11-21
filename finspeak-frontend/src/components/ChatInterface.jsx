@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import VoiceRecorder from './VoiceRecorder';
 import TextInput from './TextInput';
 import MessageList from './MessageList';
@@ -13,15 +13,33 @@ function ChatInterface() {
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const audioRef = useRef(null);
 
+  // Handle option selection
+  useEffect(() => {
+    const handleOptionSelected = (event) => {
+      handleTextSubmit(event.detail);
+    };
+    window.addEventListener('optionSelected', handleOptionSelected);
+    return () => window.removeEventListener('optionSelected', handleOptionSelected);
+  }, []);
+
   const handleResponse = (response) => {
     // Remove typing indicator
     setIsProcessing(false);
+    
+    // Add confirmation message first if present
+    if (response.confirmation) {
+      setMessages(prev => [...prev, { 
+        type: 'assistant', 
+        text: response.confirmation
+      }]);
+    }
     
     if (response.text) {
       setMessages(prev => [...prev, { 
         type: 'assistant', 
         text: response.text,
-        audio: response.audioUrl 
+        audio: response.audioUrl,
+        options: response.options || null
       }]);
 
       if (response.audioUrl && audioRef.current) {
@@ -62,36 +80,23 @@ function ChatInterface() {
     }
   };
 
-  const handleAudioRecorded = async (audioBlob) => {
+  const handleAudioRecorded = async (transcript) => {
+    // transcript is now a string from Web Speech API
+    if (!transcript || transcript.trim() === '') {
+      setMessages(prev => [...prev, { 
+        type: 'error', 
+        text: 'No speech detected. Please try again.' 
+      }]);
+      return;
+    }
+    
+    // Show user message immediately
+    setMessages(prev => [...prev, { type: 'user', text: transcript }]);
     setIsProcessing(true);
 
     try {
-      // Step 1: Transcribe audio
-      const transcribeResponse = await sendAudioToBackend(audioBlob);
-      
-      // Check if transcription was successful
-      if (!transcribeResponse.userText || transcribeResponse.userText.trim() === '') {
-        // No speech detected or empty transcription
-        if (transcribeResponse.text) {
-          // Backend returned error message
-          handleResponse(transcribeResponse);
-        } else {
-          // Unexpected empty response
-          setMessages(prev => [...prev, { 
-            type: 'error', 
-            text: 'No speech detected. Please try again.' 
-          }]);
-          setIsProcessing(false);
-        }
-        return;
-      }
-      
-      // Show user message immediately after transcription
-      setMessages(prev => [...prev, { type: 'user', text: transcribeResponse.userText }]);
-      
-      // Step 2: Process with LLM (same as text input)
-      const llmResponse = await sendTextToBackend(transcribeResponse.userText);
-      handleResponse(llmResponse);
+      const response = await sendTextToBackend(transcript);
+      handleResponse(response);
     } catch (error) {
       setMessages(prev => [...prev, { 
         type: 'error', 
@@ -119,25 +124,56 @@ function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto p-4">
-      <header className="bg-blue-600 text-white p-4 rounded-t-lg">
-        <h1 className="text-2xl font-bold">FinSpeak</h1>
-        <p className="text-sm">Voice Banking Assistant</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-8 flex items-center justify-center relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-20 left-20">
+          <svg className="w-64 h-64 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+          </svg>
+        </div>
+        <div className="absolute bottom-20 right-20">
+          <svg className="w-64 h-64 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+          </svg>
+        </div>
+      </div>
+      
+      {/* Bank Name Watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="text-center transform -rotate-12">
+          <h1 className="text-9xl font-bold text-white opacity-10 tracking-wider">GRACE HOPPER</h1>
+          <p className="text-5xl font-light text-white opacity-10 tracking-widest mt-4">BANK</p>
+        </div>
+      </div>
+      
+    <div className="flex flex-col h-[85vh] max-w-4xl w-full relative z-10">
+      <header className="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-5 rounded-t-xl shadow-2xl backdrop-blur-sm bg-opacity-95">
+        <div className="flex items-center gap-3">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+          </svg>
+          <div>
+            <h1 className="text-2xl font-bold">FinSpeak</h1>
+            <p className="text-sm opacity-90">Grace Hopper Bank</p>
+          </div>
+        </div>
       </header>
 
       <MessageList messages={messages} />
       
       {isProcessing && <div className="px-4"><TypingIndicator /></div>}
 
-      <VoiceRecorder 
-        onAudioRecorded={handleAudioRecorded} 
-        disabled={isProcessing}
-      />
-
-      <TextInput 
-        onTextSubmit={handleTextSubmit}
-        disabled={isProcessing}
-      />
+      <div className="bg-white p-4 rounded-b-xl shadow-lg border-t border-gray-200 flex items-center gap-3">
+        <VoiceRecorder 
+          onAudioRecorded={handleAudioRecorded} 
+          disabled={isProcessing}
+        />
+        <TextInput 
+          onTextSubmit={handleTextSubmit}
+          disabled={isProcessing}
+        />
+      </div>
 
       {showOTPModal && (
         <OTPModal 
@@ -147,6 +183,7 @@ function ChatInterface() {
       )}
 
       <audio ref={audioRef} className="hidden" />
+    </div>
     </div>
   );
 }

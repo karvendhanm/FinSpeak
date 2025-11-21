@@ -12,7 +12,7 @@ function TextInput({ onTextSubmit, disabled }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-4 rounded-b-lg shadow-lg flex gap-2">
+    <form onSubmit={handleSubmit} className="flex-1 flex gap-2">
       <input
         type="text"
         value={text}

@@ -1,74 +1,70 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 function VoiceRecorder({ onAudioRecorded, disabled }) {
   const [isRecording, setIsRecording] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
+  const recognitionRef = useRef(null);
 
-  const startRecording = async () => {
-    try {
-      console.log('Requesting microphone access...');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('Microphone access granted');
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
       
-      // Try different MIME types for better Mac compatibility
-      let options = { mimeType: 'audio/webm;codecs=opus' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'audio/webm' };
-      }
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'audio/ogg;codecs=opus' };
-      }
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = {};
-      }
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        console.log('Transcribed:', transcript);
+        onAudioRecorded(transcript);
+        setIsRecording(false);
+      };
       
-      console.log('Using MIME type:', options.mimeType || 'default');
-      mediaRecorderRef.current = new MediaRecorder(stream, options);
-      chunksRef.current = [];
-
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        console.log('Audio chunk received:', e.data.size, 'bytes');
-        chunksRef.current.push(e.data);
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
       };
-
-      mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        console.log('Recording stopped. Blob size:', audioBlob.size, 'bytes');
-        onAudioRecorded(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
+      
+      recognition.onend = () => {
+        setIsRecording(false);
       };
+      
+      recognitionRef.current = recognition;
+    }
+  }, [onAudioRecorded]);
 
-      mediaRecorderRef.current.start(100); // Collect data every 100ms
-      console.log('Recording started');
+  const startRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.start();
       setIsRecording(true);
-    } catch (error) {
-      console.error('Microphone error:', error);
-      alert('Microphone error: ' + error.message);
+      console.log('Speech recognition started');
+    } else {
+      alert('Speech recognition not supported in this browser.');
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+    if (recognitionRef.current && isRecording) {
+      recognitionRef.current.stop();
       setIsRecording(false);
     }
   };
 
   return (
-    <div className="bg-white p-4 rounded-b-lg shadow-lg">
-      <button
-        onClick={isRecording ? stopRecording : startRecording}
-        disabled={disabled}
-        className={`w-full py-4 rounded-lg font-semibold transition ${
-          isRecording 
-            ? 'bg-red-500 hover:bg-red-600 text-white' 
-            : 'bg-blue-500 hover:bg-blue-600 text-white'
-        } disabled:bg-gray-300 disabled:cursor-not-allowed`}
-      >
-        {isRecording ? '🔴 Stop Recording' : '🎤 Start Recording'}
-      </button>
-    </div>
+    <button
+      onClick={isRecording ? stopRecording : startRecording}
+      disabled={disabled}
+      className={`w-12 h-12 rounded-full flex items-center justify-center transition shadow-md ${
+        isRecording 
+          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+          : 'bg-blue-600 hover:bg-blue-700 text-white'
+      } disabled:bg-gray-300 disabled:cursor-not-allowed`}
+      title={isRecording ? 'Stop Recording' : 'Start Recording'}
+    >
+      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+      </svg>
+    </button>
   );
 }
 

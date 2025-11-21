@@ -66,14 +66,32 @@ function ChatInterface() {
     setIsProcessing(true);
 
     try {
-      const response = await sendAudioToBackend(audioBlob);
+      // Step 1: Transcribe audio
+      const transcribeResponse = await sendAudioToBackend(audioBlob);
       
-      // Show user message immediately after transcription
-      if (response.userText) {
-        setMessages(prev => [...prev, { type: 'user', text: response.userText }]);
+      // Check if transcription was successful
+      if (!transcribeResponse.userText || transcribeResponse.userText.trim() === '') {
+        // No speech detected or empty transcription
+        if (transcribeResponse.text) {
+          // Backend returned error message
+          handleResponse(transcribeResponse);
+        } else {
+          // Unexpected empty response
+          setMessages(prev => [...prev, { 
+            type: 'error', 
+            text: 'No speech detected. Please try again.' 
+          }]);
+          setIsProcessing(false);
+        }
+        return;
       }
       
-      handleResponse(response);
+      // Show user message immediately after transcription
+      setMessages(prev => [...prev, { type: 'user', text: transcribeResponse.userText }]);
+      
+      // Step 2: Process with LLM (same as text input)
+      const llmResponse = await sendTextToBackend(transcribeResponse.userText);
+      handleResponse(llmResponse);
     } catch (error) {
       setMessages(prev => [...prev, { 
         type: 'error', 

@@ -260,51 +260,9 @@ async def process_voice(audio: UploadFile = File(...)):
                     "audioUrl": None
                 })
             
-            # Step 1: LLM identifies intent and function
-            llm_result = process_user_input(transcribed_text)
-            print(f"LLM identified function: {llm_result['function']}")
-            
-            function_name = llm_result["function"]
-            params = llm_result["params"]
-            
-            # Step 2: Backend deterministically checks if OTP is required
-            requires_otp = function_name in OTP_REQUIRED_FUNCTIONS
-            print(f"OTP required: {requires_otp} (Backend security check)")
-            
-            if requires_otp:
-                # Generate OTP and create session
-                session_id = str(uuid.uuid4())
-                otp = str(random.randint(100000, 999999))
-                
-                pending_sessions[session_id] = {
-                    "function": function_name,
-                    "params": params,
-                    "otp": otp,
-                    "timestamp": time.time()
-                }
-                
-                print(f"\n🔐 OTP for session {session_id}: {otp}")
-                print(f"   (Or use master OTP: {MASTER_OTP})\n")
-                
-                response_text = "For security, please enter the OTP sent to your registered device to complete this transaction."
-                audio_url = text_to_speech(response_text)
-                
-                return JSONResponse({
-                    "userText": transcribed_text,
-                    "text": response_text,
-                    "audioUrl": audio_url,
-                    "requiresOTP": True,
-                    "sessionId": session_id
-                })
-            
-            # No OTP required - execute function directly
-            response_text = execute_function(function_name, params)
-            audio_url = text_to_speech(response_text)
-            
+            # Return only transcribed text - frontend will call /api/text for LLM processing
             return JSONResponse({
-                "userText": transcribed_text,
-                "text": response_text,
-                "audioUrl": audio_url
+                "userText": transcribed_text
             })
         else:
             return JSONResponse({"error": "Transcription failed"}, status_code=500)

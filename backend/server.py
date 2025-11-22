@@ -25,6 +25,7 @@ from config import (
 )
 from agent_prompt import SYSTEM_PROMPT
 from banking_tools import ALL_BANKING_TOOLS, pending_transfers
+from db import execute_transfer
 
 app = FastAPI()
 
@@ -102,6 +103,27 @@ async def verify_otp(otp: str, sessionId: str):
         
         # Get transaction details
         txn_details = pending_otps[sessionId]["details"]
+        
+        # Execute the actual transfer in database
+        try:
+            result = execute_transfer(
+                from_account_id=txn_details["from_account_id"],
+                to_beneficiary_id=txn_details["to_beneficiary_id"],
+                amount=txn_details["amount"]
+            )
+            
+            if not result["success"]:
+                print(f"❌ Transfer failed: {result['error']}")
+                return JSONResponse({"error": result["error"]}, status_code=400)
+            
+            print(f"💰 Transfer executed! New balance: ₹{result['new_balance']:,}")
+            
+        except Exception as e:
+            print(f"❌ Transfer execution error: {e}")
+            import traceback
+            traceback.print_exc()
+            return JSONResponse({"error": "Transfer failed"}, status_code=500)
+        
         response_text = f"Transfer successful! {txn_details['amount']:,.0f} rupees sent to {txn_details['to_beneficiary']}."
         
         # Cleanup both pending_otps and pending_transfers
@@ -133,6 +155,10 @@ def extract_options(text):
         if line.startswith('-') or line.startswith('•'):
             option = line.lstrip('-•').strip()
             if option:
+                # Skip transaction lines (format: "DD MMM YYYY: Description ±₹Amount")
+                if re.search(r'\d{1,2}\s+\w{3}\s+\d{4}:', option):
+                    continue
+                
                 # Extract account with balance: "Savings Account ending with 7890 (₹10,00,000)"
                 match = re.search(r'([\w\s]+?)\s+ending (?:with|in) (\d{4})\s*\(₹[\d,]+\)', option, re.IGNORECASE)
                 if match:
@@ -203,6 +229,8 @@ async def process_text(text: str, userId: str = "demo_user"):
                 pending_otps[session_id] = {
                     "otp": transfer_data["otp"],
                     "details": {
+                        "from_account_id": transfer_data["from_account_id"],
+                        "to_beneficiary_id": transfer_data["to_beneficiary_id"],
                         "amount": transfer_data["amount"],
                         "to_beneficiary": transfer_data["to_beneficiary"]
                     }
@@ -232,6 +260,33 @@ async def process_text(text: str, userId: str = "demo_user"):
         # Extract confirmation summary
         confirmation = extract_confirmation_summary(response_text)
         
+        # Check if response contains transaction history and pagination info
+        transactions_data = None
+        pagination_info = None
+        if "transaction" in response_text.lower():
+            import re
+            from datetime import datetime
+            txn_lines = []
+            for line in response_text.split('\n'):
+                # Match: "DD MMM YYYY: Description +₹Amount" or "- DD MMM YYYY: Description +₹Amount"
+                match = re.search(r'-?\s*(\d{1,2}\s+\w{3}\s+\d{4}):\s*(.+?)\s+([+-])₹([\d,]+)', line)
+                if match:
+                    date_str, desc, sign, amount = match.groups()
+                    # Convert "15 Jan 2025" to "15/01/2025"
+                    date_obj = datetime.strptime(date_str, "%d %b %Y")
+                    formatted_date = date_obj.strftime("%d/%m/%Y")
+                    txn_lines.append({
+                        "date": formatted_date,
+                        "description": desc.strip(),
+                        "type": "credit" if sign == "+" else "debit",
+                        "amount": amount
+                    })
+            if txn_lines:
+                transactions_data = txn_lines
+                print(f"📊 Detected {len(txn_lines)} transactions")
+                
+                # No need to extract pagination for button navigation
+        
         # Normal response
         audio_url = text_to_speech(response_text)
         
@@ -248,6 +303,13 @@ async def process_text(text: str, userId: str = "demo_user"):
         if confirmation:
             response["confirmation"] = confirmation
         
+        if transactions_data:
+            response["transactions"] = transactions_data
+            print(f"📤 Sending {len(transactions_data)} transactions")
+        
+        # Pagination handled via voice commands only
+        
+        print(f"📤 Full response keys: {response.keys()}")
         return JSONResponse(response)
     
     except Exception as e:

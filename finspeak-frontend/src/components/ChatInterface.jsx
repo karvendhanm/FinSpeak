@@ -31,6 +31,7 @@ function ChatInterface() {
         audio: response.audioUrl,
         options: response.options || null,
         confirmation: response.confirmation || null,
+        transactions: response.transactions || null,
         requiresOTP: response.requiresOTP || false,
         sessionId: response.sessionId || null,
         timestamp: new Date()

@@ -185,6 +185,29 @@ function MessageList({ messages, onOTPSubmit }) {
               }`}
             >
               <div className="whitespace-pre-line">{msg.text || ''}</div>
+              {msg.transactions && msg.transactions.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {msg.transactions.map((txn, idx) => (
+                    <div key={idx} className={`p-2 rounded-md border-l-3 transition-all hover:shadow-sm ${
+                      txn.type === 'credit' 
+                        ? 'bg-green-50 border-green-500 hover:bg-green-100' 
+                        : 'bg-red-50 border-red-500 hover:bg-red-100'
+                    }`}>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 text-xs">{txn.description}</div>
+                          <div className="text-[10px] text-gray-500 mt-0.5">{txn.date}</div>
+                        </div>
+                        <div className={`text-sm font-bold whitespace-nowrap ${
+                          txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {txn.type === 'credit' ? '+' : '-'}₹{txn.amount}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               {msg.confirmation && msg.confirmation.amount && (
                 <div className="mt-3">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">

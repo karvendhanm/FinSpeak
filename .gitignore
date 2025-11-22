@@ -64,3 +64,13 @@ sessions/
 *.wav
 *.mp3
 *.webm
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+backend/*.db
+backend/*.db-journal
+backend/*.db.backup
+backend/finspeak.db

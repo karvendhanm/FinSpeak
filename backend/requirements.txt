@@ -9,3 +9,4 @@ strands-agents
 strands-agents-tools
 strands-agents-builder
 aiofiles
+python-dateutil

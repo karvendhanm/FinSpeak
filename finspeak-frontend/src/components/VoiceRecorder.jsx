@@ -55,7 +55,7 @@ function VoiceRecorder({ onAudioRecorded, disabled }) {
       disabled={disabled}
       className={`w-12 h-12 rounded-full flex items-center justify-center transition shadow-md ${
         isRecording 
-          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse-ring' 
           : 'bg-blue-600 hover:bg-blue-700 text-white'
       } disabled:bg-gray-300 disabled:cursor-not-allowed`}
       title={isRecording ? 'Stop Recording' : 'Start Recording'}

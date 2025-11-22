@@ -5,3 +5,7 @@ boto3
 python-dotenv
 requests
 ffmpeg-python
+strands-agents
+strands-agents-tools
+strands-agents-builder
+aiofiles

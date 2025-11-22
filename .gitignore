@@ -2,6 +2,13 @@
 .env
 *.env
 !.env.example
+backend/.env
+
+# AWS Credentials (CRITICAL - NEVER COMMIT!)
+.aws/
+*.pem
+*.key
+credentials
 
 # Python
 __pycache__/
@@ -9,13 +16,18 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.venv/
+venv/
+env/
 backend/.venv/
 backend/venv/
 backend/env/
 *.egg-info/
 .pytest_cache/
+*.pyc
 
 # Node.js / React
+node_modules/
 finspeak-frontend/node_modules/
 finspeak-frontend/dist/
 finspeak-frontend/build/
@@ -24,6 +36,7 @@ finspeak-frontend/.vite/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
 
 # IDEs
 .vscode/
@@ -32,14 +45,22 @@ yarn-error.log*
 *.swp
 *.swo
 *~
-.DS_Store
 
 # OS
-Thumbs.db
 .DS_Store
+Thumbs.db
 
 # Temporary files
 *.tmp
 *.bak
 *.log
 *.pid
+
+# Session files
+sessions/
+*.session
+
+# Audio files (if any)
+*.wav
+*.mp3
+*.webm

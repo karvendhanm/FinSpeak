@@ -2,14 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import VoiceRecorder from './VoiceRecorder';
 import TextInput from './TextInput';
 import MessageList from './MessageList';
-import OTPModal from './OTPModal';
 import TypingIndicator from './TypingIndicator';
 import { sendAudioToBackend, sendTextToBackend, verifyOTP } from '../utils/api';
 
 function ChatInterface() {
   const [messages, setMessages] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showOTPModal, setShowOTPModal] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const audioRef = useRef(null);
 
@@ -26,20 +24,16 @@ function ChatInterface() {
     // Remove typing indicator
     setIsProcessing(false);
     
-    // Add confirmation message first if present
-    if (response.confirmation) {
-      setMessages(prev => [...prev, { 
-        type: 'assistant', 
-        text: response.confirmation
-      }]);
-    }
-    
     if (response.text) {
       setMessages(prev => [...prev, { 
         type: 'assistant', 
         text: response.text,
         audio: response.audioUrl,
-        options: response.options || null
+        options: response.options || null,
+        confirmation: response.confirmation || null,
+        requiresOTP: response.requiresOTP || false,
+        sessionId: response.sessionId || null,
+        timestamp: new Date()
       }]);
 
       if (response.audioUrl && audioRef.current) {
@@ -48,10 +42,9 @@ function ChatInterface() {
       }
     }
     
-    // Check if OTP is required
+    // Store session ID for OTP verification
     if (response.requiresOTP) {
       setCurrentSessionId(response.sessionId);
-      setShowOTPModal(true);
     }
   };
 
@@ -59,18 +52,23 @@ function ChatInterface() {
     try {
       const response = await verifyOTP(otp, currentSessionId);
       
-      setMessages(prev => [...prev, { 
-        type: 'assistant', 
-        text: response.text,
-        audio: response.audioUrl 
-      }]);
+      // Remove OTP message and add success message
+      setMessages(prev => {
+        const filtered = prev.filter(m => !m.requiresOTP);
+        return [...filtered, { 
+          type: 'assistant', 
+          text: response.text,
+          audio: response.audioUrl,
+          showSuccessModal: response.showSuccessModal || false,
+          timestamp: new Date()
+        }];
+      });
 
       if (response.audioUrl && audioRef.current) {
         audioRef.current.src = response.audioUrl;
         audioRef.current.play();
       }
       
-      setShowOTPModal(false);
       setCurrentSessionId(null);
     } catch (error) {
       setMessages(prev => [...prev, { 
@@ -91,7 +89,7 @@ function ChatInterface() {
     }
     
     // Show user message immediately
-    setMessages(prev => [...prev, { type: 'user', text: transcript }]);
+    setMessages(prev => [...prev, { type: 'user', text: transcript, timestamp: new Date() }]);
     setIsProcessing(true);
 
     try {
@@ -108,7 +106,7 @@ function ChatInterface() {
 
   const handleTextSubmit = async (text) => {
     // Show user message immediately
-    setMessages(prev => [...prev, { type: 'user', text: text }]);
+    setMessages(prev => [...prev, { type: 'user', text: text, timestamp: new Date() }]);
     setIsProcessing(true);
 
     try {
@@ -139,28 +137,21 @@ function ChatInterface() {
         </div>
       </div>
       
-      {/* Bank Name Watermark */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="text-center transform -rotate-12">
-          <h1 className="text-9xl font-bold text-white opacity-10 tracking-wider">GRACE HOPPER</h1>
-          <p className="text-5xl font-light text-white opacity-10 tracking-widest mt-4">BANK</p>
-        </div>
-      </div>
       
     <div className="flex flex-col h-[85vh] max-w-4xl w-full relative z-10">
       <header className="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-5 rounded-t-xl shadow-2xl backdrop-blur-sm bg-opacity-95">
         <div className="flex items-center gap-3">
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-          </svg>
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            N
+          </div>
           <div>
-            <h1 className="text-2xl font-bold">FinSpeak</h1>
-            <p className="text-sm opacity-90">Grace Hopper Bank</p>
+            <h1 className="text-2xl font-bold">Nidhi</h1>
+            <p className="text-sm opacity-90">Voice Banking Assistant • Grace Hopper Bank</p>
           </div>
         </div>
       </header>
 
-      <MessageList messages={messages} />
+      <MessageList messages={messages} onOTPSubmit={handleOTPSubmit} />
       
       {isProcessing && <div className="px-4"><TypingIndicator /></div>}
 
@@ -175,12 +166,7 @@ function ChatInterface() {
         />
       </div>
 
-      {showOTPModal && (
-        <OTPModal 
-          onSubmit={handleOTPSubmit}
-          onClose={() => setShowOTPModal(false)}
-        />
-      )}
+
 
       <audio ref={audioRef} className="hidden" />
     </div>

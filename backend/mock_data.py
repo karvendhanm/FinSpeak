@@ -15,7 +15,7 @@ DEMO_USER = {
             "name": "Primary Savings",
             "type": "savings",
             "account_number": "XXXX7890",
-            "balance": 12450.75,
+            "balance": 1000000,
             "bank": HOME_BANK
         },
         {
@@ -23,7 +23,7 @@ DEMO_USER = {
             "name": "Emergency Fund",
             "type": "savings",
             "account_number": "XXXX3456",
-            "balance": 25000.00,
+            "balance": 2000000,
             "bank": HOME_BANK
         },
         {
@@ -31,7 +31,7 @@ DEMO_USER = {
             "name": "Current Account",
             "type": "current",
             "account_number": "XXXX1234",
-            "balance": 5230.00,
+            "balance": 500000,
             "bank": HOME_BANK
         }
     ],
@@ -98,8 +98,8 @@ def get_transfer_modes():
     """Get available transfer modes for inter-bank transfers"""
     return [
         {"id": "imps", "name": "IMPS", "description": "Instant (24x7)"},
-        {"id": "neft", "name": "NEFT", "description": "Within 2 hours (working hours)"},
-        {"id": "rtgs", "name": "RTGS", "description": "Real-time (₹2 lakh+, working hours)"}
+        {"id": "neft", "name": "NEFT", "description": "Within 2 working hours"},
+        {"id": "rtgs", "name": "RTGS", "description": "Real-time (₹2 lakh+, only in working hours)"}
     ]
 
 # Mock transaction data
@@ -110,39 +110,39 @@ def generate_transactions(account_id, from_date=None, to_date=None, days=30):
     
     # Base transactions for Primary Savings Account
     primary_savings_transactions = [
-        {"date": "2025-01-15", "type": "credit", "description": "Salary Credit", "amount": 5000.00, "balance": 12450.75},
-        {"date": "2025-01-12", "type": "debit", "description": "Amazon Purchase", "amount": 150.25, "balance": 7450.75},
-        {"date": "2025-01-10", "type": "debit", "description": "Electricity Bill", "amount": 85.50, "balance": 7601.00},
-        {"date": "2025-01-08", "type": "credit", "description": "Transfer from Raj Sharma", "amount": 200.00, "balance": 7686.50},
-        {"date": "2025-01-05", "type": "debit", "description": "ATM Withdrawal", "amount": 500.00, "balance": 7486.50},
-        {"date": "2025-01-03", "type": "debit", "description": "Grocery Store", "amount": 120.75, "balance": 7986.50},
-        {"date": "2025-01-01", "type": "credit", "description": "Interest Credit", "amount": 25.50, "balance": 8107.25},
-        {"date": "2024-12-28", "type": "debit", "description": "Restaurant", "amount": 75.00, "balance": 8081.75},
-        {"date": "2024-12-25", "type": "debit", "description": "Online Shopping", "amount": 250.00, "balance": 8156.75},
-        {"date": "2024-12-20", "type": "credit", "description": "Freelance Payment", "amount": 1000.00, "balance": 8406.75}
+        {"date": "2025-01-15", "type": "credit", "description": "Salary Credit", "amount": 50000, "balance": 1000000},
+        {"date": "2025-01-12", "type": "debit", "description": "Amazon Purchase", "amount": 1500, "balance": 950000},
+        {"date": "2025-01-10", "type": "debit", "description": "Electricity Bill", "amount": 850, "balance": 951500},
+        {"date": "2025-01-08", "type": "credit", "description": "Transfer from Raj Sharma", "amount": 2000, "balance": 952350},
+        {"date": "2025-01-05", "type": "debit", "description": "ATM Withdrawal", "amount": 5000, "balance": 950350},
+        {"date": "2025-01-03", "type": "debit", "description": "Grocery Store", "amount": 1200, "balance": 955350},
+        {"date": "2025-01-01", "type": "credit", "description": "Interest Credit", "amount": 250, "balance": 956550},
+        {"date": "2024-12-28", "type": "debit", "description": "Restaurant", "amount": 750, "balance": 956300},
+        {"date": "2024-12-25", "type": "debit", "description": "Online Shopping", "amount": 2500, "balance": 957050},
+        {"date": "2024-12-20", "type": "credit", "description": "Freelance Payment", "amount": 10000, "balance": 959550}
     ]
     
     # Base transactions for Emergency Fund
     emergency_fund_transactions = [
-        {"date": "2025-01-15", "type": "credit", "description": "Monthly Savings Transfer", "amount": 2000.00, "balance": 25000.00},
-        {"date": "2025-01-01", "type": "credit", "description": "Interest Credit", "amount": 45.50, "balance": 23000.00},
-        {"date": "2024-12-15", "type": "credit", "description": "Monthly Savings Transfer", "amount": 2000.00, "balance": 22954.50},
-        {"date": "2024-12-01", "type": "credit", "description": "Interest Credit", "amount": 42.30, "balance": 20954.50},
-        {"date": "2024-11-15", "type": "credit", "description": "Monthly Savings Transfer", "amount": 2000.00, "balance": 20912.20}
+        {"date": "2025-01-15", "type": "credit", "description": "Monthly Savings Transfer", "amount": 20000, "balance": 2000000},
+        {"date": "2025-01-01", "type": "credit", "description": "Interest Credit", "amount": 450, "balance": 1980000},
+        {"date": "2024-12-15", "type": "credit", "description": "Monthly Savings Transfer", "amount": 20000, "balance": 1979550},
+        {"date": "2024-12-01", "type": "credit", "description": "Interest Credit", "amount": 420, "balance": 1959550},
+        {"date": "2024-11-15", "type": "credit", "description": "Monthly Savings Transfer", "amount": 20000, "balance": 1959130}
     ]
     
     # Base transactions for Current Account
     current_transactions = [
-        {"date": "2025-01-14", "type": "debit", "description": "Rent Payment", "amount": 1200.00, "balance": 5230.00},
-        {"date": "2025-01-11", "type": "credit", "description": "Transfer from Savings", "amount": 2000.00, "balance": 6430.00},
-        {"date": "2025-01-09", "type": "debit", "description": "Gas Station", "amount": 60.00, "balance": 4430.00},
-        {"date": "2025-01-06", "type": "debit", "description": "Coffee Shop", "amount": 15.50, "balance": 4490.00},
-        {"date": "2025-01-04", "type": "debit", "description": "Pharmacy", "amount": 45.25, "balance": 4505.50},
-        {"date": "2025-01-02", "type": "credit", "description": "Refund", "amount": 30.00, "balance": 4550.75},
-        {"date": "2024-12-30", "type": "debit", "description": "Utility Bill", "amount": 95.00, "balance": 4520.75},
-        {"date": "2024-12-27", "type": "debit", "description": "Movie Tickets", "amount": 40.00, "balance": 4615.75},
-        {"date": "2024-12-23", "type": "debit", "description": "Book Store", "amount": 55.00, "balance": 4655.75},
-        {"date": "2024-12-18", "type": "credit", "description": "Cashback", "amount": 20.00, "balance": 4710.75}
+        {"date": "2025-01-14", "type": "debit", "description": "Rent Payment", "amount": 12000, "balance": 500000},
+        {"date": "2025-01-11", "type": "credit", "description": "Transfer from Savings", "amount": 20000, "balance": 512000},
+        {"date": "2025-01-09", "type": "debit", "description": "Gas Station", "amount": 600, "balance": 492000},
+        {"date": "2025-01-06", "type": "debit", "description": "Coffee Shop", "amount": 150, "balance": 492600},
+        {"date": "2025-01-04", "type": "debit", "description": "Pharmacy", "amount": 450, "balance": 492750},
+        {"date": "2025-01-02", "type": "credit", "description": "Refund", "amount": 300, "balance": 493200},
+        {"date": "2024-12-30", "type": "debit", "description": "Utility Bill", "amount": 950, "balance": 492900},
+        {"date": "2024-12-27", "type": "debit", "description": "Movie Tickets", "amount": 400, "balance": 493850},
+        {"date": "2024-12-23", "type": "debit", "description": "Book Store", "amount": 550, "balance": 494250},
+        {"date": "2024-12-18", "type": "credit", "description": "Cashback", "amount": 200, "balance": 494800}
     ]
     
     # Select transactions based on account

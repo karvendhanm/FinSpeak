@@ -34,7 +34,7 @@ function MessageList({ messages, onOTPSubmit }) {
               <div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-1">Namaste! I'm Nidhi</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Your voice banking assistant. I can help you check balances, transfer money, and view transaction history.
+                  Your voice banking assistant. I can help you with balance inquiries, fund transfers, transaction history, loans, credit cards, and payment reminders.
                 </p>
               </div>
             </div>
@@ -48,11 +48,15 @@ function MessageList({ messages, onOTPSubmit }) {
                 </li>
                 <li className="flex items-center justify-center gap-2">
                   <span className="text-blue-600">•</span>
-                  "Send money to my own account"
+                  "Transfer money to Pratap Kumar"
                 </li>
                 <li className="flex items-center justify-center gap-2">
                   <span className="text-blue-600">•</span>
-                  "Show last week's transactions"
+                  "Show my loan status"
+                </li>
+                <li className="flex items-center justify-center gap-2">
+                  <span className="text-blue-600">•</span>
+                  "Any upcoming payments?"
                 </li>
               </ul>
             </div>
@@ -185,12 +189,30 @@ function MessageList({ messages, onOTPSubmit }) {
                   ? 'bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md'
                   : msg.type === 'error'
                   ? 'bg-red-100 text-red-700 px-4 py-2 rounded-lg'
+                  : (msg.text && msg.text.toLowerCase().includes('insufficient balance'))
+                  ? 'bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-400 px-5 py-4 rounded-xl shadow-lg'
                   : 'bg-white text-gray-800 px-4 py-2 rounded-lg shadow-md border border-blue-100'
               }`}
             >
-              {/* Hide text script when structured data (payments/transactions/loans/cards) is present, but show for questions/errors/confirmations */}
-              {!(msg.payments?.length > 0 || msg.transactions?.length > 0 || msg.loans?.length > 0 || msg.cards?.length > 0) && (
-                <div className="whitespace-pre-line">{msg.text || ''}</div>
+              {/* Always show text */}
+              {(
+                <div className="whitespace-pre-line">
+                  {msg.text && msg.text.toLowerCase().includes('insufficient balance') ? (
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-red-500 flex items-center justify-center shadow-md">
+                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-base font-bold text-red-800 mb-1">Insufficient Balance</h4>
+                        <p className="text-sm text-red-700 leading-relaxed">{msg.text.replace(/^insufficient balance[.:]/i, '').trim()}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    msg.text || ''
+                  )}
+                </div>
               )}
               {msg.loans && msg.loans.length > 0 && (
                 <div className="mt-3 space-y-3">
@@ -336,7 +358,8 @@ function MessageList({ messages, onOTPSubmit }) {
                     <div className="mt-3 flex gap-3">
                       <button
                         onClick={() => {
-                          const event = new CustomEvent('optionSelected', { detail: 'Yes' });
+                          console.log('✅ Yes button clicked - dispatching event');
+                          const event = new CustomEvent('optionSelected', { detail: 'Yes confirm' });
                           window.dispatchEvent(event);
                         }}
                         className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg"
@@ -345,6 +368,7 @@ function MessageList({ messages, onOTPSubmit }) {
                       </button>
                       <button
                         onClick={() => {
+                          console.log('❌ No button clicked - dispatching event');
                           const event = new CustomEvent('optionSelected', { detail: 'No' });
                           window.dispatchEvent(event);
                         }}

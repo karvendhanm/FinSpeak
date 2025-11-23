@@ -302,7 +302,9 @@ def extract_confirmation_summary(text):
 async def process_text(text: str, userId: str = "demo_user"):
     """Process text input through Strands agent"""
     print(f"\n{'='*60}")
-    print(f"User: {text}")
+    print(f"📥 INCOMING REQUEST - User: {text}")
+    print(f"   User ID: {userId}")
+    print(f"   Timestamp: {time.time()}")
     
     try:
         agent = get_agent(userId)
@@ -368,7 +370,9 @@ async def process_text(text: str, userId: str = "demo_user"):
                     userId,
                     transfer_data['amount'],
                     transfer_data.get('to_beneficiary_id'),
-                    transfer_data.get('transfer_type', 'beneficiary')
+                    transfer_data.get('transfer_type', 'beneficiary'),
+                    from_account_id=transfer_data.get('from_account_id'),
+                    to_account_id=transfer_data.get('to_account_id')
                 )
                 
                 if risk_analysis['has_risks']:

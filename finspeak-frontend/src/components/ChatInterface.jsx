@@ -14,6 +14,7 @@ function ChatInterface() {
   // Handle option selection
   useEffect(() => {
     const handleOptionSelected = (event) => {
+      console.log('📨 optionSelected event received:', event.detail);
       handleTextSubmit(event.detail);
     };
     window.addEventListener('optionSelected', handleOptionSelected);
@@ -107,14 +108,18 @@ function ChatInterface() {
   };
 
   const handleTextSubmit = async (text) => {
+    console.log('📝 handleTextSubmit called with:', text);
     // Show user message immediately
     setMessages(prev => [...prev, { type: 'user', text: text, timestamp: new Date() }]);
     setIsProcessing(true);
 
     try {
+      console.log('🚀 Sending to backend:', text);
       const response = await sendTextToBackend(text);
+      console.log('✅ Backend response received:', response);
       handleResponse(response);
     } catch (error) {
+      console.error('❌ Error in handleTextSubmit:', error);
       setMessages(prev => [...prev, { 
         type: 'error', 
         text: 'Error: ' + error.message 
@@ -140,7 +145,7 @@ function ChatInterface() {
       </div>
       
       
-    <div className="flex flex-col h-[85vh] max-w-4xl w-full relative z-10">
+    <div className="flex flex-col h-[92vh] max-w-4xl w-full relative z-10">
       <header className="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-5 rounded-t-xl shadow-2xl backdrop-blur-sm bg-opacity-95">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">

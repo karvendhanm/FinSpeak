@@ -64,7 +64,10 @@ User Voice → Web Speech API/AWS Transcribe → FastAPI Backend
 cd backend
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your AWS credentials
+# Edit .env with your AWS credentials:
+# AWS_ACCESS_KEY_ID=your_access_key
+# AWS_SECRET_ACCESS_KEY=your_secret_key
+# AWS_DEFAULT_REGION=us-west-2
 python init_db.py  # Initialize database
 python server.py   # Start server on port 8000
 ```
@@ -81,6 +84,11 @@ npm run dev  # Start on port 5173
 - **Metrics Dashboard**: Open `backend/dashboard.html` in browser
 - **API Docs**: http://localhost:8000/docs
 
+### Demo Credentials
+- **Master OTP**: `123456` (for testing transfers)
+- **Demo Accounts**: 3 pre-loaded accounts (Savings x2, Current x1)
+- **Demo Beneficiaries**: Pratap Kumar (HDFC), Pratap Singh (Grace Hopper), Raj Sharma (SBI)
+
 ## 📊 Demo
 
 See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for complete demo walkthrough.
@@ -91,6 +99,8 @@ See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for complete demo walkthrough.
 3. "Show recent transactions" - View transaction history
 4. "What's my loan status?" - Check loan details
 5. Open dashboard to see metrics and audit logs
+
+**Video Demo**: [Watch on YouTube](https://www.youtube.com/watch?v=Hk6h8GQqSaE)
 
 ## 📈 Business Case
 
@@ -210,13 +220,27 @@ This is a hackathon project. For production deployment:
 
 MIT License - See LICENSE file
 
+## 🏆 Hackathon
+
+**Event**: GHCI 25 AI Hackathon  
+**Organizers**: AnitaB.org India & Backbase  
+**Theme**: AI-Powered Banking Innovation  
+**Submission Date**: January 2025
+
 ## 👥 Team
 
-Built with ❤️ for the hackathon
+Built with ❤️ for GHCI 25 AI Hackathon
 
 ## 📞 Support
 
 For questions or issues, please open a GitHub issue.
+
+## 🙏 Acknowledgments
+
+- **AWS Bedrock** for Claude Sonnet 4 access
+- **Strands Framework** for agent orchestration
+- **AnitaB.org India & Backbase** for organizing the hackathon
+- **Grace Hopper Celebration** for inspiring innovation in tech
 
 ---
 

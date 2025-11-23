@@ -26,7 +26,7 @@ function MessageList({ messages, onOTPSubmit }) {
           
           <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6 border-2 border-blue-100">
             <div className="flex items-start gap-3 mb-4">
-              <div className="bg-gradient-to-br from-blue-600 to-green-600 p-2 rounded-full">
+              <div className="bg-gradient-to-br from-blue-600 to-green-600 p-2 rounded-full mt-3">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -34,7 +34,7 @@ function MessageList({ messages, onOTPSubmit }) {
               <div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-1">Namaste! I'm Nidhi</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Your voice banking assistant. I can help you transfer money to your saved beneficiaries quickly and securely.
+                  Your voice banking assistant. I can help you check balances, transfer money, and view transaction history.
                 </p>
               </div>
             </div>
@@ -44,11 +44,15 @@ function MessageList({ messages, onOTPSubmit }) {
               <ul className="text-sm text-gray-600 space-y-1">
                 <li className="flex items-center justify-center gap-2">
                   <span className="text-blue-600">•</span>
-                  "Send 5000 rupees to Pratap"
+                  "What's my balance?"
                 </li>
                 <li className="flex items-center justify-center gap-2">
                   <span className="text-blue-600">•</span>
-                  "Transfer money to Raj Sharma"
+                  "Send money to my own account"
+                </li>
+                <li className="flex items-center justify-center gap-2">
+                  <span className="text-blue-600">•</span>
+                  "Show last week's transactions"
                 </li>
               </ul>
             </div>
@@ -184,7 +188,107 @@ function MessageList({ messages, onOTPSubmit }) {
                   : 'bg-white text-gray-800 px-4 py-2 rounded-lg shadow-md border border-blue-100'
               }`}
             >
-              <div className="whitespace-pre-line">{msg.text || ''}</div>
+              {/* Hide text script when structured data (payments/transactions/loans/cards) is present, but show for questions/errors/confirmations */}
+              {!(msg.payments?.length > 0 || msg.transactions?.length > 0 || msg.loans?.length > 0 || msg.cards?.length > 0) && (
+                <div className="whitespace-pre-line">{msg.text || ''}</div>
+              )}
+              {msg.loans && msg.loans.length > 0 && (
+                <div className="mt-3 space-y-3">
+                  {msg.loans.map((loan, idx) => (
+                    <div key={idx} className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-300 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <h4 className="font-bold text-purple-900 text-base">{loan.type} Loan</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white bg-opacity-60 rounded-md p-2">
+                          <div className="text-xs text-gray-600">Outstanding</div>
+                          <div className="text-sm font-bold text-purple-900">₹{loan.outstanding}</div>
+                        </div>
+                        <div className="bg-white bg-opacity-60 rounded-md p-2">
+                          <div className="text-xs text-gray-600">EMI</div>
+                          <div className="text-sm font-bold text-purple-900">₹{loan.emi}</div>
+                        </div>
+                        <div className="bg-white bg-opacity-60 rounded-md p-2">
+                          <div className="text-xs text-gray-600">Due Date</div>
+                          <div className="text-sm font-semibold text-gray-800">{loan.due_date}</div>
+                        </div>
+                        <div className="bg-white bg-opacity-60 rounded-md p-2">
+                          <div className="text-xs text-gray-600">Interest Rate</div>
+                          <div className="text-sm font-semibold text-gray-800">{loan.interest_rate}%</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 bg-white bg-opacity-60 rounded-md p-2">
+                        <div className="text-xs text-gray-600">Remaining Tenure</div>
+                        <div className="text-sm font-semibold text-gray-800">{loan.tenure_remaining}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {msg.cards && msg.cards.length > 0 && (
+                <div className="mt-3 space-y-3">
+                  {msg.cards.map((card, idx) => (
+                    <div key={idx} className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-300 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <h4 className="font-bold text-blue-900 text-base">{card.name}</h4>
+                        <span className="ml-auto text-xs font-mono text-gray-600">****{card.last_four}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white bg-opacity-60 rounded-md p-2">
+                          <div className="text-xs text-gray-600">Available Credit</div>
+                          <div className="text-sm font-bold text-green-600">₹{card.available_credit}</div>
+                        </div>
+                        <div className="bg-white bg-opacity-60 rounded-md p-2">
+                          <div className="text-xs text-gray-600">Credit Limit</div>
+                          <div className="text-sm font-bold text-blue-900">₹{card.credit_limit}</div>
+                        </div>
+                        <div className="bg-white bg-opacity-60 rounded-md p-2">
+                          <div className="text-xs text-gray-600">Total Due</div>
+                          <div className="text-sm font-bold text-red-600">₹{card.total_due}</div>
+                        </div>
+                        <div className="bg-white bg-opacity-60 rounded-md p-2">
+                          <div className="text-xs text-gray-600">Minimum Due</div>
+                          <div className="text-sm font-semibold text-orange-600">₹{card.minimum_due}</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 bg-white bg-opacity-60 rounded-md p-2">
+                        <div className="text-xs text-gray-600">Payment Due On</div>
+                        <div className="text-sm font-semibold text-gray-800">{card.due_date}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {msg.payments && msg.payments.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {msg.payments.map((payment, idx) => (
+                    <div key={idx} className="p-3 rounded-lg bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-orange-400">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900 text-sm">{payment.type}</div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Due on {payment.due_date}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-base font-bold text-orange-600">₹{payment.amount}</div>
+                          <div className={`text-xs font-medium mt-1 ${
+                            payment.days_left <= 3 ? 'text-red-600' : payment.days_left <= 7 ? 'text-orange-600' : 'text-gray-600'
+                          }`}>
+                            {payment.days_left} {payment.days_left === 1 ? 'day' : 'days'} left
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               {msg.transactions && msg.transactions.length > 0 && (
                 <div className="mt-3 space-y-1.5">
                   {msg.transactions.map((txn, idx) => (

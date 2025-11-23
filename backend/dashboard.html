@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinSpeak Metrics Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: white; text-align: center; margin-bottom: 30px; font-size: 2.5em; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .metric-card h3 { color: #667eea; font-size: 0.9em; text-transform: uppercase; margin-bottom: 10px; }
+        .metric-card .value { font-size: 2.5em; font-weight: bold; color: #333; }
+        .metric-card .label { color: #666; font-size: 0.9em; margin-top: 5px; }
+        .logs { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .logs h2 { color: #667eea; margin-bottom: 20px; }
+        .log-entry { padding: 12px; border-bottom: 1px solid #eee; display: grid; grid-template-columns: 150px 180px 1fr 100px; gap: 15px; font-size: 0.9em; }
+        .log-entry:last-child { border-bottom: none; }
+        .log-entry .timestamp { color: #666; }
+        .log-entry .action { font-weight: 600; color: #333; word-break: break-word; }
+        .log-entry .details { word-break: break-word; }
+        .log-entry .status { padding: 4px 12px; border-radius: 12px; text-align: center; font-size: 0.85em; font-weight: 600; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.pending { background: #fff3cd; color: #856404; }
+        .status.failed { background: #f8d7da; color: #721c24; }
+        .status.flagged { background: #f8d7da; color: #721c24; }
+        .refresh-btn { background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-bottom: 20px; }
+        .refresh-btn:hover { background: #5568d3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏦 FinSpeak Metrics Dashboard</h1>
+        
+        <div class="metrics" id="metrics">
+            <div class="metric-card">
+                <h3>Total Transactions</h3>
+                <div class="value" id="total">-</div>
+                <div class="label">All time</div>
+            </div>
+            <div class="metric-card">
+                <h3>Success Rate</h3>
+                <div class="value" id="success-rate">-</div>
+                <div class="label">Percentage</div>
+            </div>
+            <div class="metric-card">
+                <h3>Total Transferred</h3>
+                <div class="value" id="total-amount">-</div>
+                <div class="label">Rupees</div>
+            </div>
+            <div class="metric-card">
+                <h3>Recent Activity</h3>
+                <div class="value" id="recent">-</div>
+                <div class="label">Last 24 hours</div>
+            </div>
+        </div>
+
+        <div class="logs">
+            <h2>📋 Recent Audit Logs</h2>
+            <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                // Load metrics
+                const metricsRes = await fetch('http://localhost:8000/api/metrics');
+                const metrics = await metricsRes.json();
+                
+                document.getElementById('total').textContent = metrics.total_transactions;
+                document.getElementById('success-rate').textContent = metrics.success_rate + '%';
+                document.getElementById('total-amount').textContent = '₹' + metrics.total_amount_transferred.toLocaleString('en-IN');
+                document.getElementById('recent').textContent = metrics.recent_activity_24h;
+
+                // Load logs
+                const logsRes = await fetch('http://localhost:8000/api/audit-logs?limit=20');
+                const logsData = await logsRes.json();
+                
+                const logsHtml = logsData.logs.map(log => {
+                    const time = new Date(log.timestamp).toLocaleString('en-IN');
+                    return `
+                        <div class="log-entry">
+                            <div class="timestamp">${time}</div>
+                            <div class="action">${log.action}</div>
+                            <div class="details">${log.details || '-'}</div>
+                            <div class="status ${log.status}">${log.status}</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                document.getElementById('logs').innerHTML = logsHtml || '<p>No logs yet</p>';
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Load on page load
+        loadData();
+        
+        // Auto-refresh every 10 seconds
+        setInterval(loadData, 10000);
+    </script>
+</body>
+</html>

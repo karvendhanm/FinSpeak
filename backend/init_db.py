@@ -128,13 +128,13 @@ def init_database():
         
         # Insert transactions for Emergency Fund (last 3 months from Nov 22, 2025)
         transactions_emergency = [
-            ("acc_savings_emergency", "2025-11-15", "credit", "Monthly Savings Transfer", 20000, 2000000),
+            ("acc_savings_emergency", "2025-11-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 2000000),
             ("acc_savings_emergency", "2025-11-01", "credit", "Interest Credit", 450, 1980000),
-            ("acc_savings_emergency", "2025-10-15", "credit", "Monthly Savings Transfer", 20000, 1979550),
+            ("acc_savings_emergency", "2025-10-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 1979550),
             ("acc_savings_emergency", "2025-10-01", "credit", "Interest Credit", 420, 1959550),
-            ("acc_savings_emergency", "2025-09-15", "credit", "Monthly Savings Transfer", 20000, 1959130),
+            ("acc_savings_emergency", "2025-09-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 1959130),
             ("acc_savings_emergency", "2025-09-01", "credit", "Interest Credit", 410, 1939130),
-            ("acc_savings_emergency", "2025-08-22", "credit", "Monthly Savings Transfer", 20000, 1938720),
+            ("acc_savings_emergency", "2025-08-22", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 1938720),
         ]
         
         # Insert transactions for Current Account (last 3 months from Nov 22, 2025)
@@ -146,7 +146,7 @@ def init_database():
             ("acc_current", "2025-11-17", "debit", "Pharmacy", 450, 503150),
             ("acc_current", "2025-11-16", "credit", "Refund", 300, 503600),
             ("acc_current", "2025-11-14", "debit", "Rent Payment", 12000, 503300),
-            ("acc_current", "2025-11-11", "credit", "Transfer from Savings", 20000, 515300),
+            ("acc_current", "2025-11-11", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 515300),
             ("acc_current", "2025-11-09", "debit", "Gas Station", 600, 495300),
             ("acc_current", "2025-11-06", "debit", "Restaurant", 850, 495900),
             ("acc_current", "2025-11-04", "debit", "Movie Tickets", 400, 496750),
@@ -157,14 +157,14 @@ def init_database():
             ("acc_current", "2025-10-23", "credit", "Cashback", 200, 501150),
             ("acc_current", "2025-10-20", "debit", "Cab Fare", 350, 500950),
             ("acc_current", "2025-10-14", "debit", "Rent Payment", 12000, 501300),
-            ("acc_current", "2025-10-11", "credit", "Transfer from Savings", 20000, 513300),
+            ("acc_current", "2025-10-11", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 513300),
             ("acc_current", "2025-10-08", "debit", "Dinner", 950, 493300),
             ("acc_current", "2025-10-05", "debit", "Grocery", 1200, 494250),
             # September 2025 (2 months ago)
             ("acc_current", "2025-09-28", "debit", "Fuel", 1800, 495450),
             ("acc_current", "2025-09-22", "debit", "Shopping", 2500, 497250),
             ("acc_current", "2025-09-14", "debit", "Rent Payment", 12000, 499750),
-            ("acc_current", "2025-09-11", "credit", "Transfer from Savings", 20000, 511750),
+            ("acc_current", "2025-09-11", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 511750),
             ("acc_current", "2025-09-08", "debit", "Restaurant", 850, 491750),
             # August 2025 (3 months ago)
             ("acc_current", "2025-08-28", "debit", "Grocery", 1200, 492600),

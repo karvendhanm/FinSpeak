@@ -1,14 +1,31 @@
-# Environment variables (NEVER commit credentials!)
+# ============================================================================
+# CRITICAL: NEVER COMMIT SENSITIVE DATA TO GITHUB!
+# ============================================================================
+
+# Environment variables (CONTAINS AWS CREDENTIALS!)
 .env
 *.env
 !.env.example
 backend/.env
+finspeak-frontend/.env
 
 # AWS Credentials (CRITICAL - NEVER COMMIT!)
 .aws/
 *.pem
 *.key
 credentials
+aws-credentials*
+
+# Database files (CONTAINS USER DATA!)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+backend/*.db
+backend/*.db-journal
+backend/*.db.backup
+backend/finspeak.db
+backend/finspeak_audit.db
 
 # Python
 __pycache__/
@@ -60,17 +77,28 @@ Thumbs.db
 sessions/
 *.session
 
-# Audio files (if any)
+# Audio files (temporary)
 *.wav
 *.mp3
 *.webm
+audio/
 
-# Database files
-*.db
-*.db-journal
-*.sqlite
-*.sqlite3
-backend/*.db
-backend/*.db-journal
-backend/*.db.backup
-backend/finspeak.db
+# Test files
+test_*.py
+comprehensive_test.py
+test_loan_card_detection.py
+
+# Backup files
+*.backup
+*.old
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Security documentation with credentials
+SECURITY_ALERT.md
+GITHUB_READY_CHECKLIST.md

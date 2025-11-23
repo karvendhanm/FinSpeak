@@ -9,7 +9,8 @@ from db import (
     get_beneficiary_by_id,
     find_beneficiaries_by_name,
     is_same_bank_transfer,
-    get_transactions
+    get_transactions,
+    execute_own_account_transfer
 )
 import random
 
@@ -33,6 +34,26 @@ def get_accounts() -> list:
             "balance": acc["balance"]
         }
         for acc in accounts
+    ]
+
+
+@tool
+def get_destination_accounts(exclude_account_id: str) -> list:
+    """Get user's accounts excluding the source account (for own-account transfers)
+    
+    Args:
+        exclude_account_id: Account ID to exclude (the source account)
+    """
+    accounts = get_all_accounts()  # From database
+    return [
+        {
+            "id": acc["id"],
+            "display_name": f"{acc['name']} ({acc['account_number']})",
+            "speech_name": f"{acc['type'].title()} Account ending with {acc['account_number'][-4:]}",
+            "account_number": acc["account_number"],
+            "balance": acc["balance"]
+        }
+        for acc in accounts if acc["id"] != exclude_account_id
     ]
 
 
@@ -126,6 +147,19 @@ def initiate_transfer(from_account_id: str, to_beneficiary_id: str, amount: floa
     if not beneficiary:
         return {"error": "Beneficiary not found"}
     
+    # Validate transfer mode limits
+    mode_lower = mode.lower()
+    if mode_lower == "imps" and amount > 500000:
+        return {
+            "error": f"IMPS supports transfers up to ₹5,00,000. Your amount: ₹{amount:,.0f}",
+            "suggestion": "Please use NEFT (any amount) or RTGS (₹2 lakh+) for this transfer."
+        }
+    elif mode_lower == "rtgs" and amount < 200000:
+        return {
+            "error": f"RTGS requires minimum ₹2,00,000. Your amount: ₹{amount:,.0f}",
+            "suggestion": "Please use IMPS (up to ₹5 lakh) or NEFT (any amount) for this transfer."
+        }
+    
     # Generate OTP and session
     otp = str(random.randint(100000, 999999))
     session_id = f"txn_{random.randint(10000, 99999)}"
@@ -148,12 +182,63 @@ def initiate_transfer(from_account_id: str, to_beneficiary_id: str, amount: floa
     }
 
 
+@tool
+def initiate_own_account_transfer(from_account_id: str, to_account_id: str, amount: float) -> dict:
+    """Initiate transfer between user's own accounts (instant, no mode selection needed)
+    
+    Args:
+        from_account_id: Source account ID (e.g., acc_current)
+        to_account_id: Destination account ID (e.g., acc_savings_primary)
+        amount: Transfer amount in rupees
+    """
+    # Validate source account
+    from_account = get_account_by_id(from_account_id)
+    if not from_account:
+        return {"error": "Source account not found"}
+    
+    if from_account["balance"] < amount:
+        return {"error": f"Insufficient balance. Available: {from_account['balance']:,.0f} rupees"}
+    
+    # Validate destination account
+    to_account = get_account_by_id(to_account_id)
+    if not to_account:
+        return {"error": "Destination account not found"}
+    
+    # Prevent same account transfer
+    if from_account_id == to_account_id:
+        return {"error": "Cannot transfer to the same account"}
+    
+    # Generate OTP and session
+    otp = str(random.randint(100000, 999999))
+    session_id = f"txn_{random.randint(10000, 99999)}"
+    
+    # Store pending transfer with IDs for database execution
+    pending_transfers[session_id] = {
+        "otp": otp,
+        "transfer_type": "own_account",
+        "from_account_id": from_account_id,
+        "to_account_id": to_account_id,
+        "from_account": from_account["name"],
+        "to_account": to_account["name"],
+        "amount": amount
+    }
+    
+    return {
+        "status": "otp_required",
+        "session_id": session_id,
+        "otp": otp,
+        "message": f"Transfer of {amount:,.0f} rupees from {from_account['name']} to {to_account['name']} is ready. An OTP has been sent to the registered mobile number."
+    }
+
+
 # Export tools list for easy import
 FUND_TRANSFER_TOOLS = [
     get_accounts,
+    get_destination_accounts,
     get_beneficiaries,
     get_transfer_modes,
-    initiate_transfer
+    initiate_transfer,
+    initiate_own_account_transfer
 ]
 
 @tool
@@ -290,8 +375,92 @@ def get_transaction_history(account_id: str = None, account_type: str = None, da
     }
 
 
+@tool
+def get_loan_details() -> dict:
+    """Get user's active loans with EMI, outstanding amount, and interest rates"""
+    return {
+        "loans": [
+            {
+                "type": "Home Loan",
+                "outstanding": 2500000,
+                "emi": 25000,
+                "due_date": "5th of every month",
+                "interest_rate": "8.5%",
+                "tenure_remaining": "15 years"
+            },
+            {
+                "type": "Personal Loan",
+                "outstanding": 150000,
+                "emi": 5000,
+                "due_date": "10th of every month",
+                "interest_rate": "12%",
+                "tenure_remaining": "2 years 6 months"
+            }
+        ]
+    }
+
+@tool
+def get_credit_card_details() -> dict:
+    """Get credit card details including limit, balance, and payment due"""
+    return {
+        "cards": [
+            {
+                "name": "Grace Hopper Platinum Card",
+                "card_number": "XXXX5678",
+                "credit_limit": 500000,
+                "used_amount": 45000,
+                "available_credit": 455000,
+                "payment_due_date": "15th of every month",
+                "minimum_due": 2250,
+                "total_due": 45000
+            }
+        ]
+    }
+
 BALANCE_TOOLS = [
     check_balance
+]
+
+@tool
+def get_upcoming_payments() -> dict:
+    """Get upcoming bill payments, EMIs, and due dates"""
+    from datetime import datetime, timedelta
+    
+    today = datetime.now()
+    
+    return {
+        "upcoming": [
+            {
+                "type": "Home Loan EMI",
+                "amount": 25000,
+                "due_date": "2025-12-05",
+                "days_left": (datetime(2025, 12, 5) - today).days
+            },
+            {
+                "type": "Personal Loan EMI",
+                "amount": 5000,
+                "due_date": "2025-12-10",
+                "days_left": (datetime(2025, 12, 10) - today).days
+            },
+            {
+                "type": "Credit Card Payment",
+                "amount": 2250,
+                "due_date": "2025-12-15",
+                "days_left": (datetime(2025, 12, 15) - today).days
+            },
+            {
+                "type": "Electricity Bill",
+                "amount": 850,
+                "due_date": "2025-12-01",
+                "days_left": (datetime(2025, 12, 1) - today).days
+            }
+        ]
+    }
+
+LOAN_CREDIT_TOOLS = [
+    get_loan_details,
+    get_credit_card_details,
+    get_upcoming_payments
 ]
 
 @tool
@@ -346,4 +515,4 @@ TRANSACTION_TOOLS = [
     previous_page
 ]
 
-ALL_BANKING_TOOLS = FUND_TRANSFER_TOOLS + BALANCE_TOOLS + TRANSACTION_TOOLS
+ALL_BANKING_TOOLS = FUND_TRANSFER_TOOLS + BALANCE_TOOLS + TRANSACTION_TOOLS + LOAN_CREDIT_TOOLS

@@ -163,8 +163,13 @@ def get_transactions(account_id: str, limit: int = 10, start_date: str = None, e
 def execute_transfer(from_account_id: str, to_beneficiary_id: str, amount: int, user_id: str = "demo_user") -> Dict:
     """
     Execute transfer: deduct from source, add transaction
-    Returns: {"success": True, "new_balance": int, "beneficiary_name": str}
+    Returns: {"success": True, "new_balance": int, "beneficiary_name": str, "transaction_id": str}
     """
+    from datetime import datetime
+    import random
+    
+    # Generate unique transaction ID: TXN + timestamp + random
+    txn_id = f"TXN{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(1000, 9999)}"
     with get_db() as conn:
         # 1. Get source account
         cursor = conn.execute(
@@ -219,7 +224,8 @@ def execute_transfer(from_account_id: str, to_beneficiary_id: str, amount: int, 
             "success": True,
             "new_balance": new_balance,
             "beneficiary_name": ben_name,
-            "account_name": account_name
+            "account_name": account_name,
+            "transaction_id": txn_id
         }
 
 
@@ -238,3 +244,121 @@ def is_same_bank_transfer(beneficiary_id: str, user_id: str = "demo_user") -> bo
     if not beneficiary:
         return False
     return beneficiary["bank"] == get_home_bank()
+
+
+def execute_own_account_transfer(from_account_id: str, to_account_id: str, amount: int, user_id: str = "demo_user") -> Dict:
+    """
+    Execute transfer between user's own accounts: debit from source, credit to destination
+    Returns: {"success": True, "from_balance": int, "to_balance": int, "from_account": str, "to_account": str, "transaction_id": str}
+    """
+    from datetime import datetime
+    import random
+    
+    # Generate unique transaction ID: TXN + timestamp + random
+    txn_id = f"TXN{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(1000, 9999)}"
+    with get_db() as conn:
+        # 1. Get source account
+        cursor = conn.execute(
+            "SELECT balance, name FROM accounts WHERE id = ? AND user_id = ?",
+            (from_account_id, user_id)
+        )
+        from_row = cursor.fetchone()
+        if not from_row:
+            return {"success": False, "error": "Source account not found"}
+        
+        from_balance = from_row["balance"]
+        from_name = from_row["name"]
+        
+        # 2. Check sufficient balance
+        if from_balance < amount:
+            return {"success": False, "error": f"Insufficient balance. Available: ₹{from_balance:,}"}
+        
+        # 3. Get destination account
+        cursor = conn.execute(
+            "SELECT balance, name FROM accounts WHERE id = ? AND user_id = ?",
+            (to_account_id, user_id)
+        )
+        to_row = cursor.fetchone()
+        if not to_row:
+            return {"success": False, "error": "Destination account not found"}
+        
+        to_balance = to_row["balance"]
+        to_name = to_row["name"]
+        
+        # 4. Prevent transfer to same account
+        if from_account_id == to_account_id:
+            return {"success": False, "error": "Cannot transfer to the same account"}
+        
+        # 5. Debit from source account
+        new_from_balance = from_balance - amount
+        conn.execute(
+            "UPDATE accounts SET balance = ? WHERE id = ?",
+            (new_from_balance, from_account_id)
+        )
+        
+        # 6. Credit to destination account
+        new_to_balance = to_balance + amount
+        conn.execute(
+            "UPDATE accounts SET balance = ? WHERE id = ?",
+            (new_to_balance, to_account_id)
+        )
+        
+        # 7. Get account numbers for descriptions
+        cursor = conn.execute(
+            "SELECT account_number, type FROM accounts WHERE id = ?",
+            (to_account_id,)
+        )
+        to_acc_row = cursor.fetchone()
+        to_account_number = to_acc_row["account_number"]
+        to_account_type = to_acc_row["type"].title()
+        
+        cursor = conn.execute(
+            "SELECT account_number, type FROM accounts WHERE id = ?",
+            (from_account_id,)
+        )
+        from_acc_row = cursor.fetchone()
+        from_account_number = from_acc_row["account_number"]
+        from_account_type = from_acc_row["type"].title()
+        
+        # 8. Add debit transaction to source
+        conn.execute(
+            """INSERT INTO transactions 
+               (account_id, date, type, description, amount, balance_after)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                from_account_id,
+                datetime.now().strftime("%Y-%m-%d"),
+                "debit",
+                f"Transfer to {to_account_type} Account ({to_account_number})",
+                amount,
+                new_from_balance
+            )
+        )
+        
+        # 9. Add credit transaction to destination
+        conn.execute(
+            """INSERT INTO transactions 
+               (account_id, date, type, description, amount, balance_after)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                to_account_id,
+                datetime.now().strftime("%Y-%m-%d"),
+                "credit",
+                f"Transfer from {from_account_type} Account ({from_account_number})",
+                amount,
+                new_to_balance
+            )
+        )
+        
+        return {
+            "success": True,
+            "from_balance": new_from_balance,
+            "to_balance": new_to_balance,
+            "from_account": from_name,
+            "to_account": to_name,
+            "from_account_type": from_account_type,
+            "to_account_type": to_account_type,
+            "from_account_number": from_account_number,
+            "to_account_number": to_account_number,
+            "transaction_id": txn_id
+        }

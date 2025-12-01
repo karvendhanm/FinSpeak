@@ -1,6 +1,18 @@
 import { useState } from 'react';
 
-function TextInput({ onTextSubmit, disabled }) {
+const translations = {
+  en: {
+    placeholder: "Or type your message here...",
+    send: "Send"
+  },
+  hi: {
+    placeholder: "या यहां अपना संदेश टाइप करें...",
+    send: "भेजें"
+  }
+};
+
+function TextInput({ onTextSubmit, disabled, language = 'en' }) {
+  const t = translations[language];
   const [text, setText] = useState('');
 
   const handleSubmit = (e) => {
@@ -17,7 +29,7 @@ function TextInput({ onTextSubmit, disabled }) {
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Or type your message here..."
+        placeholder={t.placeholder}
         disabled={disabled}
         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
       />
@@ -26,7 +38,7 @@ function TextInput({ onTextSubmit, disabled }) {
         disabled={disabled || !text.trim()}
         className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
-        Send
+        {t.send}
       </button>
     </form>
   );

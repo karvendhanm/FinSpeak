@@ -1,6 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
 
-function MessageList({ messages, onOTPSubmit }) {
+const welcomeTranslations = {
+  en: {
+    bankName: "Grace Hopper Bank",
+    subtitle: "Voice Banking Assistant",
+    greeting: "Namaste! I'm Nidhi",
+    description: "Your voice banking assistant. I can help you with balance inquiries, fund transfers, transaction history, loans, credit cards, and payment reminders.",
+    trySaying: "Try saying:",
+    examples: [
+      "What's my balance?",
+      "Transfer money to Pratap Kumar",
+      "Show my loan status",
+      "Any upcoming payments?"
+    ],
+    startPrompt: "Press the microphone button or type to start",
+    transferSuccess: "Transfer Successful!"
+  },
+  hi: {
+    bankName: "ग्रेस हॉपर बैंक",
+    subtitle: "वॉयस बैंकिंग सहायक",
+    greeting: "नमस्ते! मैं निधि हूं",
+    description: "आपकी वॉयस बैंकिंग सहायक। मैं बैलेंस पूछताछ, फंड ट्रांसफर, लेनदेन का इतिहास, लोन, क्रेडिट कार्ड और भुगतान रिमाइंडर में आपकी मदद कर सकती हूं।",
+    trySaying: "यह कहकर देखें:",
+    examples: [
+      "मेरा बैलेंस क्या है?",
+      "प्रताप कुमार को पैसे ट्रांसफर करें",
+      "मेरा लोन स्टेटस दिखाएं",
+      "कोई आने वाले भुगतान?"
+    ],
+    startPrompt: "माइक्रोफोन बटन दबाएं या टाइप करके शुरू करें",
+    transferSuccess: "ट्रांसफर सफल!"
+  }
+};
+
+function MessageList({ messages, onOTPSubmit, language = 'en' }) {
+  const w = welcomeTranslations[language];
   const endRef = useRef(null);
   const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
   const [isListening, setIsListening] = useState(false);
@@ -21,8 +55,8 @@ function MessageList({ messages, onOTPSubmit }) {
               </svg>
             </div>
           </div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-2">Grace Hopper Bank</h2>
-          <p className="text-gray-500 text-lg mb-6">Voice Banking Assistant</p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-2">{w.bankName}</h2>
+          <p className="text-gray-500 text-lg mb-6">{w.subtitle}</p>
           
           <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6 border-2 border-blue-100">
             <div className="flex items-start gap-3 mb-4">
@@ -32,36 +66,26 @@ function MessageList({ messages, onOTPSubmit }) {
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-1">Namaste! I'm Nidhi</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-1">{w.greeting}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Your voice banking assistant. I can help you with balance inquiries, fund transfers, transaction history, loans, credit cards, and payment reminders.
+                  {w.description}
                 </p>
               </div>
             </div>
             
             <div className="bg-blue-50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-700 mb-2 font-medium text-center">Try saying:</p>
+              <p className="text-sm text-gray-700 mb-2 font-medium text-center">{w.trySaying}</p>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li className="flex items-center justify-center gap-2">
-                  <span className="text-blue-600">•</span>
-                  "What's my balance?"
-                </li>
-                <li className="flex items-center justify-center gap-2">
-                  <span className="text-blue-600">•</span>
-                  "Transfer money to Pratap Kumar"
-                </li>
-                <li className="flex items-center justify-center gap-2">
-                  <span className="text-blue-600">•</span>
-                  "Show my loan status"
-                </li>
-                <li className="flex items-center justify-center gap-2">
-                  <span className="text-blue-600">•</span>
-                  "Any upcoming payments?"
-                </li>
+                {w.examples.map((example, idx) => (
+                  <li key={idx} className="flex items-center justify-center gap-2">
+                    <span className="text-blue-600">•</span>
+                    "{example}"
+                  </li>
+                ))}
               </ul>
             </div>
             
-            <p className="text-gray-400 text-sm text-center">Press the microphone button or type to start</p>
+            <p className="text-gray-400 text-sm text-center">{w.startPrompt}</p>
           </div>
         </div>
       )}
@@ -176,7 +200,7 @@ function MessageList({ messages, onOTPSubmit }) {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-xl font-bold text-green-800 mb-2 flex items-center gap-2">
-                    Transfer Successful! {String.fromCodePoint(0x1F389)}
+                    {w.transferSuccess} {String.fromCodePoint(0x1F389)}
                   </h4>
                   <p className="text-gray-800 font-medium leading-relaxed">{msg.text}</p>
                 </div>

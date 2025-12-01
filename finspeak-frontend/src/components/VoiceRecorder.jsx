@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-function VoiceRecorder({ onAudioRecorded, disabled }) {
+function VoiceRecorder({ onAudioRecorded, disabled, language }) {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
 
@@ -10,7 +10,7 @@ function VoiceRecorder({ onAudioRecorded, disabled }) {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'en-US';
+      recognition.lang = language === 'hi' ? 'hi-IN' : 'en-US';
       
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
@@ -30,7 +30,7 @@ function VoiceRecorder({ onAudioRecorded, disabled }) {
       
       recognitionRef.current = recognition;
     }
-  }, [onAudioRecorded]);
+  }, [onAudioRecorded, language]);
 
   const startRecording = () => {
     if (recognitionRef.current) {

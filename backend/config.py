@@ -16,8 +16,10 @@ OTP_REQUIRED_FUNCTIONS = [
 ]
 
 # AWS Polly Configuration
-POLLY_VOICE_ID = "Kajal"   # Female Indian English voice
-POLLY_ENGINE = "neural"    # Better quality
+POLLY_VOICES = {
+    "en": {"voice": "Kajal", "engine": "neural"},
+    "hi": {"voice": "Aditi", "engine": "standard"}
+}
 
 # AWS Transcribe Configuration
 TRANSCRIBE_LANGUAGE_CODE = "en-US"

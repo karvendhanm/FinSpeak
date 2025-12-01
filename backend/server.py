@@ -18,8 +18,7 @@ import random
 from config import (
     S3_BUCKET_NAME,
     MASTER_OTP,
-    POLLY_VOICE_ID,
-    POLLY_ENGINE,
+    POLLY_VOICES,
     TRANSCRIBE_LANGUAGE_CODE,
     TRANSCRIBE_SAMPLE_RATE
 )
@@ -69,13 +68,14 @@ def get_agent(user_id: str) -> Agent:
     
     return user_agents[user_id]
 
-def text_to_speech(text):
+def text_to_speech(text, language="en"):
     """Convert text to speech using AWS Polly"""
+    voice_config = POLLY_VOICES.get(language, POLLY_VOICES["en"])
     response = polly_client.synthesize_speech(
         Text=text,
         OutputFormat='mp3',
-        VoiceId=POLLY_VOICE_ID,
-        Engine=POLLY_ENGINE
+        VoiceId=voice_config["voice"],
+        Engine=voice_config["engine"]
     )
     
     audio_data = response['AudioStream'].read()
@@ -107,9 +107,11 @@ async def verify_otp(otp: str, sessionId: str, userId: str = "demo_user"):
         print(f"✅ OTP verified!")
         log_action(userId, "otp_verification", "success", session_id=sessionId)
         
-        # Get transaction details
+        # Get transaction details and language
         txn_details = pending_otps[sessionId]["details"]
+        txn_language = pending_otps[sessionId].get("language", "en")
         transfer_type = txn_details.get("transfer_type", "beneficiary")
+        print(f"🌍 Transaction language: {txn_language}")
         
         # Execute the actual transfer in database
         try:
@@ -140,9 +142,17 @@ async def verify_otp(otp: str, sessionId: str, userId: str = "demo_user"):
                     session_id=sessionId
                 )
                 
-                from_speech = f"{result['from_account_type']} Account ending with {result['from_account_number'][-4:]}"
-                to_speech = f"{result['to_account_type']} Account ending with {result['to_account_number'][-4:]}"
-                response_text = f"Transfer successful! {txn_details['amount']:,.0f} rupees transferred from {from_speech} to {to_speech}.\n\nTransaction ID: {result['transaction_id']}"
+                if txn_language == "hi":
+                    # Translate account types to Hindi
+                    from_type_hi = "बचत खाता" if result['from_account_type'].lower() == "savings" else "चालू खाता"
+                    to_type_hi = "बचत खाता" if result['to_account_type'].lower() == "savings" else "चालू खाता"
+                    from_speech = f"{from_type_hi} ending with {result['from_account_number'][-4:]}"
+                    to_speech = f"{to_type_hi} ending with {result['to_account_number'][-4:]}"
+                    response_text = f"{from_speech} से {to_speech} में ₹{txn_details['amount']:,.0f} ट्रांसफर हो गए।\n\nTransaction ID: {result['transaction_id']}"
+                else:
+                    from_speech = f"{result['from_account_type']} Account ending with {result['from_account_number'][-4:]}"
+                    to_speech = f"{result['to_account_type']} Account ending with {result['to_account_number'][-4:]}"
+                    response_text = f"{txn_details['amount']:,.0f} rupees transferred from {from_speech} to {to_speech}.\n\nTransaction ID: {result['transaction_id']}"
             else:
                 # Beneficiary transfer (existing flow)
                 result = execute_transfer(
@@ -173,7 +183,10 @@ async def verify_otp(otp: str, sessionId: str, userId: str = "demo_user"):
                     session_id=sessionId
                 )
                 
-                response_text = f"Transfer successful! {txn_details['amount']:,.0f} rupees sent to {txn_details['to_beneficiary']}.\n\nTransaction ID: {result['transaction_id']}"
+                if txn_language == "hi":
+                    response_text = f"{txn_details['to_beneficiary']} को ₹{txn_details['amount']:,.0f} भेजे गए।\n\nTransaction ID: {result['transaction_id']}"
+                else:
+                    response_text = f"{txn_details['amount']:,.0f} rupees sent to {txn_details['to_beneficiary']}.\n\nTransaction ID: {result['transaction_id']}"
             
         except Exception as e:
             print(f"❌ Transfer execution error: {e}")
@@ -194,7 +207,7 @@ async def verify_otp(otp: str, sessionId: str, userId: str = "demo_user"):
         if sessionId in pending_transfers:
             del pending_transfers[sessionId]
         
-        audio_url = text_to_speech(response_text)
+        audio_url = text_to_speech(response_text, txn_language)
         
         return JSONResponse({
             "text": response_text,
@@ -228,21 +241,30 @@ def extract_options(text):
                 if re.search(r'\d{1,2}\s+\w{3}\s+\d{4}:', option):
                     continue
                 
-                # Extract account with balance: "Savings Account ending with 7890 (₹10,00,000)"
-                match = re.search(r'([\w\s]+?)\s+ending (?:with|in) (\d{4})\s*\(₹[\d,]+\)', option, re.IGNORECASE)
+                # Extract account with balance: "Savings Account ending with 7890 (₹10,00,000)" or "बचत खाता अंत में 7890 (₹10,00,000)"
+                # Use \S to match any non-whitespace including Hindi characters
+                match = re.search(r'(.+?)\s+(?:ending (?:with|in)|अंत में)\s+(\d{4})\s*\(₹[\d,]+\)', option, re.IGNORECASE)
                 if match:
-                    acc_type = match.group(1).strip().title()
+                    acc_type = match.group(1).strip()
                     last_four = match.group(2)
-                    option = f"{acc_type} (XXXX{last_four})"
+                    # Keep original case for Hindi, title case for English
+                    if any('\u0900' <= char <= '\u097F' for char in acc_type):
+                        option = f"{acc_type} अंत में {last_four}"
+                    else:
+                        option = f"{acc_type.title()} ending with {last_four}"
                     options.append(option)
                     continue
                 
-                # Extract account without balance: "Savings Account ending with 7890"
-                match = re.search(r'([\w\s]+?)\s+ending (?:with|in) (\d{4})', option, re.IGNORECASE)
+                # Extract account without balance: "Savings Account ending with 7890" or "बचत खाता अंत में 7890"
+                match = re.search(r'(.+?)\s+(?:ending (?:with|in)|अंत में)\s+(\d{4})', option, re.IGNORECASE)
                 if match:
-                    acc_type = match.group(1).strip().title()
+                    acc_type = match.group(1).strip()
                     last_four = match.group(2)
-                    option = f"{acc_type} (XXXX{last_four})"
+                    # Keep original case for Hindi, title case for English
+                    if any('\u0900' <= char <= '\u097F' for char in acc_type):
+                        option = f"{acc_type} अंत में {last_four}"
+                    else:
+                        option = f"{acc_type.title()} ending with {last_four}"
                     options.append(option)
                     continue
                 
@@ -271,7 +293,7 @@ def extract_confirmation_summary(text):
     """Extract transfer confirmation details"""
     import re
     
-    # Pattern for beneficiary transfer: "Send ₹X from Y to Z via MODE?"
+    # Pattern for beneficiary transfer (English): "Send ₹X from Y to Z via MODE?"
     match = re.search(r'Send ₹?([\d,]+)(?:\s+rupees)? from ([^\n]+?) to ([^\n]+?) via (\w+)', text, re.IGNORECASE)
     if match:
         return {
@@ -283,7 +305,31 @@ def extract_confirmation_summary(text):
             "needs_confirmation": True
         }
     
-    # Pattern for own-account transfer: "Transfer ₹X from Y to Z?"
+    # Pattern for beneficiary transfer (Hindi): Must have mode and "के द्वारा" to be final confirmation
+    if 'भेजना है?' in text and 'के द्वारा' in text and re.search(r'(IMPS|NEFT|RTGS)', text):
+        # Match both "ending with" and "अंत में"
+        acc_match = re.search(r'(.+?)\s+(?:ending with|अंत में)\s+(\d{4})', text)
+        from_account = acc_match.group(0).strip() if acc_match else "Selected account"
+        
+        ben_match = re.search(r'([A-Z][a-z]+(?: [A-Z][a-z]+)*)\s+को', text)
+        to_beneficiary = ben_match.group(1).strip() if ben_match else "Selected beneficiary"
+        
+        mode_match = re.search(r'(IMPS|NEFT|RTGS)', text)
+        mode = mode_match.group(1) if mode_match else "IMPS"
+        
+        amt_match = re.search(r'\b([\d,]+)\b', text)
+        amount = amt_match.group(1) if amt_match else "0"
+        
+        return {
+            "amount": amount,
+            "from_account": from_account,
+            "to_beneficiary": to_beneficiary,
+            "mode": mode,
+            "transfer_type": "beneficiary",
+            "needs_confirmation": True
+        }
+    
+    # Pattern for own-account transfer (English): "Transfer ₹X from Y to Z?"
     match = re.search(r'Transfer ₹?([\d,]+)(?:\s+rupees)? from ([^.?]+?) to ([^.?]+?)(?:\.|\?)', text, re.IGNORECASE)
     if match:
         to_account = match.group(3).strip()
@@ -296,10 +342,31 @@ def extract_confirmation_summary(text):
             "needs_confirmation": True
         }
     
+    # Pattern for own-account transfer (Hindi): "₹X ... से ... में ट्रांसफर/भेजना है?"
+    if 'ट्रांसफर करना है?' in text or 'में ट्रांसफर' in text or 'में भेजना है?' in text:
+        amt_match = re.search(r'₹([\d,]+)', text)
+        # Match from account: look for account type (after amount) + अंत में + digits + से
+        from_match = re.search(r'₹[\d,]+\s+(.+?)\s+(?:ending with|अंत में)\s+(\d{4})\s+से', text)
+        # Match to account: look for से + account type + अंत में + digits
+        to_match = re.search(r'से\s+(.+?)\s+(?:ending with|अंत में)\s+(\d{4})\s+में', text)
+        
+        if amt_match and from_match and to_match:
+            from_account = f"{from_match.group(1).strip()} अंत में {from_match.group(2)}"
+            to_account = f"{to_match.group(1).strip()} अंत में {to_match.group(2)}"
+            
+            return {
+                "amount": amt_match.group(1),
+                "from_account": from_account,
+                "to_beneficiary": to_account,
+                "to_account": to_account,
+                "transfer_type": "own_account",
+                "needs_confirmation": True
+            }
+    
     return None
 
 @app.post("/api/text")
-async def process_text(text: str, userId: str = "demo_user"):
+async def process_text(text: str, userId: str = "demo_user", language: str = "en"):
     """Process text input through Strands agent"""
     print(f"\n{'='*60}")
     print(f"📥 INCOMING REQUEST - User: {text}")
@@ -308,7 +375,14 @@ async def process_text(text: str, userId: str = "demo_user"):
     
     try:
         agent = get_agent(userId)
-        result = await agent.invoke_async(text)
+        
+        # Add language instruction to the message
+        if language == "hi":
+            text_with_lang = f"[User is speaking in Hindi. Respond in Hindi] {text}"
+        else:
+            text_with_lang = text
+        
+        result = await agent.invoke_async(text_with_lang)
         
         response_text = result.content if hasattr(result, 'content') else str(result)
         print(f"Agent: {response_text}")
@@ -325,10 +399,17 @@ async def process_text(text: str, userId: str = "demo_user"):
                 transfer_data = pending_transfers[session_id]
                 transfer_type = transfer_data.get("transfer_type", "beneficiary")
                 
+                # Detect language from agent response if not explicitly set
+                detected_lang = language
+                if language == "en" and any(ord(c) >= 0x0900 and ord(c) <= 0x097F for c in response_text):
+                    detected_lang = "hi"
+                print(f"💾 Storing OTP with language: {detected_lang} (original: {language}, detected from response)")
+                
                 if transfer_type == "own_account":
                     # Own account transfer
                     pending_otps[session_id] = {
                         "otp": transfer_data["otp"],
+                        "language": detected_lang,
                         "details": {
                             "transfer_type": "own_account",
                             "from_account_id": transfer_data["from_account_id"],
@@ -342,6 +423,7 @@ async def process_text(text: str, userId: str = "demo_user"):
                     # Beneficiary transfer (existing flow)
                     pending_otps[session_id] = {
                         "otp": transfer_data["otp"],
+                        "language": detected_lang,
                         "details": {
                             "transfer_type": "beneficiary",
                             "from_account_id": transfer_data["from_account_id"],
@@ -381,8 +463,11 @@ async def process_text(text: str, userId: str = "demo_user"):
                         print(f"   - {risk['reason']}")
                     log_action(userId, "risk_alert", "flagged", details=str(risk_analysis['risks']))
                 
-                clean_text = f"An OTP has been sent to your registered mobile number. Please enter it to complete the transfer."
-                audio_url = text_to_speech(clean_text)
+                if language == "hi":
+                    clean_text = f"आपके पंजीकृत मोबाइल नंबर पर एक OTP भेजा गया है। कृपया ट्रांसफर पूरा करने के लिए इसे दर्ज करें।"
+                else:
+                    clean_text = f"An OTP has been sent to your registered mobile number. Please enter it to complete the transfer."
+                audio_url = text_to_speech(clean_text, language)
                 
                 return JSONResponse({
                     "userText": text,
@@ -467,32 +552,32 @@ async def process_text(text: str, userId: str = "demo_user"):
         # Check if response contains transaction history and pagination info
         transactions_data = None
         pagination_info = None
-        if "transaction" in response_text.lower():
-            import re
-            from datetime import datetime
-            txn_lines = []
-            for line in response_text.split('\n'):
-                # Match: "DD MMM YYYY: Description +₹Amount" or "- DD MMM YYYY: Description +₹Amount"
-                match = re.search(r'-?\s*(\d{1,2}\s+\w{3}\s+\d{4}):\s*(.+?)\s+([+-])₹([\d,]+)', line)
-                if match:
-                    date_str, desc, sign, amount = match.groups()
-                    # Convert "15 Jan 2025" to "15/01/2025"
-                    date_obj = datetime.strptime(date_str, "%d %b %Y")
-                    formatted_date = date_obj.strftime("%d/%m/%Y")
-                    txn_lines.append({
-                        "date": formatted_date,
-                        "description": desc.strip(),
-                        "type": "credit" if sign == "+" else "debit",
-                        "amount": amount
-                    })
-            if txn_lines:
-                transactions_data = txn_lines
-                print(f"📊 Detected {len(txn_lines)} transactions")
-                
-                # No need to extract pagination for button navigation
+        # Check for transaction format pattern instead of word "transaction" to support Hindi
+        import re
+        from datetime import datetime
+        txn_lines = []
+        for line in response_text.split('\n'):
+            # Match: "DD MMM YYYY: Description +₹Amount" or "- DD MMM YYYY: Description +₹Amount"
+            match = re.search(r'-?\s*(\d{1,2}\s+\w{3}\s+\d{4}):\s*(.+?)\s+([+-])₹([\d,]+)', line)
+            if match:
+                date_str, desc, sign, amount = match.groups()
+                # Convert "15 Jan 2025" to "15/01/2025"
+                date_obj = datetime.strptime(date_str, "%d %b %Y")
+                formatted_date = date_obj.strftime("%d/%m/%Y")
+                txn_lines.append({
+                    "date": formatted_date,
+                    "description": desc.strip(),
+                    "type": "credit" if sign == "+" else "debit",
+                    "amount": amount
+                })
+        if txn_lines:
+            transactions_data = txn_lines
+            print(f"📊 Detected {len(txn_lines)} transactions")
+            
+            # No need to extract pagination for button navigation
         
         # Normal response
-        audio_url = text_to_speech(response_text)
+        audio_url = text_to_speech(response_text, language)
         
         response = {
             "userText": text,

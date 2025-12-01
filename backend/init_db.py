@@ -86,8 +86,17 @@ def init_database():
         
         # Insert transactions for Primary Savings (last 3 months from Nov 22, 2025)
         transactions_primary = [
-            # November 2025 (recent - last week)
-            ("acc_savings_primary", "2025-11-21", "debit", "Swiggy Order", 450, 1000000),
+            # November 2025 (recent - this week)
+            ("acc_savings_primary", "2025-11-30", "debit", "Netflix Subscription", 650, 1000000),
+            ("acc_savings_primary", "2025-11-29", "debit", "Zomato Order", 580, 1000650),
+            ("acc_savings_primary", "2025-11-28", "credit", "Cashback", 150, 1001230),
+            ("acc_savings_primary", "2025-11-27", "debit", "Uber Ride", 320, 1001080),
+            ("acc_savings_primary", "2025-11-26", "debit", "Pharmacy", 420, 1001400),
+            ("acc_savings_primary", "2025-11-25", "debit", "Grocery Store", 1350, 1001820),
+            ("acc_savings_primary", "2025-11-24", "debit", "Coffee Shop", 180, 1003170),
+            ("acc_savings_primary", "2025-11-23", "debit", "Book Purchase", 750, 1003350),
+            ("acc_savings_primary", "2025-11-22", "debit", "Amazon Purchase", 1200, 1004100),
+            ("acc_savings_primary", "2025-11-21", "debit", "Swiggy Order", 450, 1005300),
             ("acc_savings_primary", "2025-11-20", "debit", "Uber Ride", 280, 1000450),
             ("acc_savings_primary", "2025-11-19", "credit", "Refund", 1200, 1000730),
             ("acc_savings_primary", "2025-11-18", "debit", "Amazon Purchase", 1500, 999530),
@@ -128,19 +137,36 @@ def init_database():
         
         # Insert transactions for Emergency Fund (last 3 months from Nov 22, 2025)
         transactions_emergency = [
-            ("acc_savings_emergency", "2025-11-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 2000000),
-            ("acc_savings_emergency", "2025-11-01", "credit", "Interest Credit", 450, 1980000),
-            ("acc_savings_emergency", "2025-10-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 1979550),
-            ("acc_savings_emergency", "2025-10-01", "credit", "Interest Credit", 420, 1959550),
-            ("acc_savings_emergency", "2025-09-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 1959130),
-            ("acc_savings_emergency", "2025-09-01", "credit", "Interest Credit", 410, 1939130),
-            ("acc_savings_emergency", "2025-08-22", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 1938720),
+            ("acc_savings_emergency", "2025-11-28", "credit", "Interest Credit", 480, 2000000),
+            ("acc_savings_emergency", "2025-11-25", "debit", "Medical Emergency", 15000, 1999520),
+            ("acc_savings_emergency", "2025-11-20", "debit", "Home Repair", 8500, 2014520),
+            ("acc_savings_emergency", "2025-11-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 2023020),
+            ("acc_savings_emergency", "2025-11-10", "debit", "Car Repair", 12000, 2003020),
+            ("acc_savings_emergency", "2025-11-01", "credit", "Interest Credit", 450, 2015020),
+            ("acc_savings_emergency", "2025-10-22", "debit", "Emergency Travel", 18000, 2014570),
+            ("acc_savings_emergency", "2025-10-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 2032570),
+            ("acc_savings_emergency", "2025-10-08", "debit", "Urgent Expense", 5000, 2012570),
+            ("acc_savings_emergency", "2025-10-01", "credit", "Interest Credit", 420, 2017570),
+            ("acc_savings_emergency", "2025-09-18", "debit", "Medical Bills", 9500, 2017150),
+            ("acc_savings_emergency", "2025-09-15", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 2026650),
+            ("acc_savings_emergency", "2025-09-01", "credit", "Interest Credit", 410, 2006650),
+            ("acc_savings_emergency", "2025-08-25", "debit", "Emergency Fund Withdrawal", 7000, 2006240),
+            ("acc_savings_emergency", "2025-08-22", "credit", "Transfer from Savings Account (XXXX7890)", 20000, 2013240),
         ]
         
         # Insert transactions for Current Account (last 3 months from Nov 22, 2025)
         transactions_current = [
-            # November 2025 (recent - last week)
-            ("acc_current", "2025-11-21", "debit", "Grocery", 1200, 500000),
+            # November 2025 (recent - this week)
+            ("acc_current", "2025-11-30", "debit", "Restaurant", 950, 500000),
+            ("acc_current", "2025-11-29", "debit", "Fuel", 1600, 500950),
+            ("acc_current", "2025-11-28", "debit", "Grocery", 1100, 502550),
+            ("acc_current", "2025-11-27", "credit", "Refund", 250, 503650),
+            ("acc_current", "2025-11-26", "debit", "Coffee Shop", 200, 503400),
+            ("acc_current", "2025-11-25", "debit", "Movie Tickets", 450, 503600),
+            ("acc_current", "2025-11-24", "debit", "Pharmacy", 380, 504050),
+            ("acc_current", "2025-11-23", "debit", "Uber Ride", 290, 504430),
+            ("acc_current", "2025-11-22", "debit", "Shopping", 1800, 504720),
+            ("acc_current", "2025-11-21", "debit", "Grocery", 1200, 506520),
             ("acc_current", "2025-11-20", "debit", "Fuel", 1800, 501200),
             ("acc_current", "2025-11-18", "debit", "Coffee Shop", 150, 503000),
             ("acc_current", "2025-11-17", "debit", "Pharmacy", 450, 503150),

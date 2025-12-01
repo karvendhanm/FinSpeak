@@ -13,9 +13,9 @@ export const sendAudioToBackend = async (audioBlob) => {
   return response.data;
 };
 
-export const sendTextToBackend = async (text) => {
+export const sendTextToBackend = async (text, language = 'en') => {
   const response = await axios.post(`${API_BASE_URL}/api/text`, null, {
-    params: { text }
+    params: { text, language }
   });
 
   return response.data;

@@ -103,3 +103,7 @@ coverage.xml
 SECURITY_ALERT.md
 GITHUB_READY_CHECKLIST.md
 
+# Markdown files (except README.md)
+*.md
+!README.md
+
